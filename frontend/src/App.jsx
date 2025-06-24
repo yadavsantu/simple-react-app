@@ -3,11 +3,12 @@ import LoginPage from './pages/Login';
 import Home from './pages/Home';
 import Registration from './components/RegistrationForm';
 
+
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/home" element={<Home />} />
         <Route path="/register" element={<Registration />} />
       </Routes>

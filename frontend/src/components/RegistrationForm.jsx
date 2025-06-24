@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
+import { useNavigate } from 'react-router-dom';
+
 
 export default function RegistrationForm() {
+  const navigate = useNavigate(); // ✅ Correct
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
     password: '',
-    confirmPassword: '',
+    
   });
 
   const [errors, setErrors] = useState({});
@@ -47,36 +50,50 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     return newErrors;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const newErrors = validateForm();
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Registration data:', formData);
-      alert('Registration successful!');
-      setIsSubmitting(false);
-      // ✅ Reset the form
-  setFormData({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-  });
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  const newErrors = validateForm();
 
-  // ✅ Clear any previous errors too (optional)
-  setErrors({});
-    }, 2000);
-  };
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    const res = await fetch('http://localhost:5001/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('✅ Registration successful!');
+      // ✅ Reset form
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        password: '',
+        confirmPassword: '',
+      });
+      setErrors({});
+       // ✅ Redirect to login
+      navigate('/login');
+    } else {
+      alert(`❌ ${data.message || 'Something went wrong'}`);
+    }
+  } catch (err) {
+    console.error('Registration error:', err);
+    alert('❌ Failed to connect to the server');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
