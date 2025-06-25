@@ -6,13 +6,29 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate(); // ← hook
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Perform login logic here
-    console.log('Logging in with:', email, password);
-    navigate('/home'); // ← redirect to home page
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
+  try {
+    const res = await fetch('http://localhost:5001/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('✅ Login successful!');
+      navigate('/');
+    } else {
+      alert(`❌ ${data.message}`);
+    }
+  } catch (err) {
+    console.error('Login error:', err);
+    alert('❌ Failed to connect to server');
+  }
+};
   return (
     <div className="min-h-screen flex justify-center items-center bg-gray-900 text-white">
       <form onSubmit={handleSubmit} className="bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md space-y-4">

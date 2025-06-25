@@ -6,8 +6,12 @@ require('dotenv').config();
 
 
 
+
 const app = express();
 const PORT = process.env.PORT || 5001;
+
+
+
 
 
 // Middleware
@@ -22,12 +26,21 @@ app.use(express.json());
 //define routes
 
 // Routes
-const userRoutes = require('./routes/userRoutes');
-app.use('/api', userRoutes);
+
+const otpRoutes = require('./routes/otpRoutes'); // Adjust path
+
+const loginAuth = require('./routes/loginAuth');
+
+
+app.use('/api', otpRoutes); 
+// Register the login route with prefix /api/login
+
+app.use('/api', loginAuth);
 
 app.get('/api', (req, res) => {
   res.json({ message: 'Hello from backend!' });
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

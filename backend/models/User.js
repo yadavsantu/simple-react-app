@@ -34,6 +34,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+   userValidated: {
+    type: Boolean,
+    default: false, // ✅ Initially false, becomes true after OTP verification
+  }
+  
+  
 
 }, {
   timestamps: true, // Adds createdAt and updatedAt fields

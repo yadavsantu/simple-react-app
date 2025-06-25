@@ -11,6 +11,7 @@ export default function RegistrationForm() {
     email: '',
     phone: '',
     password: '',
+    confirmPassword: ''
     
   });
 
@@ -62,17 +63,25 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   setIsSubmitting(true);
 
   try {
-    const res = await fetch('http://localhost:5001/api/register', {
+    // ✅ Directly send OTP along with user data to the backend
+    const otpRes = await fetch('http://localhost:5001/api/send-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        password: formData.password,
+      }),
     });
 
-    const data = await res.json();
+    const otpData = await otpRes.json();
 
-    if (res.ok) {
-      alert('✅ Registration successful!');
-      // ✅ Reset form
+    if (otpRes.ok) {
+      alert('✅ OTP sent to email! Please verify.');
+
+      // Clear the form
       setFormData({
         firstName: '',
         lastName: '',
@@ -82,10 +91,13 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
         confirmPassword: '',
       });
       setErrors({});
-       // ✅ Redirect to login
-      navigate('/login');
+
+      // Navigate to OTP verification screen
+      navigate('/verify-otp', {
+        state: { email: formData.email },
+      });
     } else {
-      alert(`❌ ${data.message || 'Something went wrong'}`);
+      alert(`❌ OTP Error: ${otpData.message || 'Failed to send OTP'}`);
     }
   } catch (err) {
     console.error('Registration error:', err);
@@ -94,6 +106,7 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     setIsSubmitting(false);
   }
 };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
