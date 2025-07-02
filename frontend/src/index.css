@@ -1,1 +1,4 @@
 @import "tailwindcss";
+button,link,a,select,option{
+  cursor: pointer;
+}

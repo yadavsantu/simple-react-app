@@ -30,12 +30,15 @@ app.use(express.json());
 const otpRoutes = require('./routes/otpRoutes'); // Adjust path
 
 const loginAuth = require('./routes/loginAuth');
+const userRoutes = require('./routes/user'); // Adjust path
+
 
 
 app.use('/api', otpRoutes); 
 // Register the login route with prefix /api/login
 
 app.use('/api', loginAuth);
+app.use('/api/user', userRoutes); // Register the user route with prefix /api/user
 
 app.get('/api', (req, res) => {
   res.json({ message: 'Hello from backend!' });

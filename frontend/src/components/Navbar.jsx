@@ -1,17 +1,37 @@
-// components/Navbar.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiMenu, FiX } from 'react-icons/fi';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [userName, setUserName] = useState(null);
+
+  useEffect(() => {
+    const email = localStorage.getItem('userEmail');
+    if (!email) return;
+
+    fetch(`http://localhost:5001/api/user/name/${email}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.firstName) {
+          setUserName(`${data.firstName} ${data.lastName}`);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch user name:', err);
+      });
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('userEmail');
+    setUserName(null);
+    window.location.href = '/login'; // redirect to login
+  };
 
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Services', path: '/services' },
     { name: 'About', path: '/about' },
     { name: 'Contact', path: '/contact' },
-    { name: 'Register', path: '/register' },
-    { name: 'Login', path: '/login' },
   ];
 
   return (
@@ -23,7 +43,7 @@ const Navbar = () => {
         </div>
 
         {/* Desktop Links */}
-        <nav className="hidden md:flex space-x-6">
+        <nav className="hidden md:flex space-x-6 items-center">
           {navLinks.map((link) => (
             <a
               key={link.name}
@@ -33,6 +53,35 @@ const Navbar = () => {
               {link.name}
             </a>
           ))}
+
+          {userName ? (
+            <>
+              <span className="ml-4 text-sm font-semibold text-blue-700">
+                👋 Welcome, {userName.split(' ')[0]}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="ml-4 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <a
+                href="/register"
+                className="ml-4 text-gray-700 font-medium hover:text-blue-600 transition"
+              >
+                Register
+              </a>
+              <a
+                href="/login"
+                className="ml-2 text-gray-700 font-medium hover:text-blue-600 transition"
+              >
+                Login
+              </a>
+            </>
+          )}
         </nav>
 
         {/* Mobile menu button */}
@@ -59,6 +108,39 @@ const Navbar = () => {
               {link.name}
             </a>
           ))}
+          {userName ? (
+            <>
+              <div className="text-sm font-semibold text-blue-700 pt-2">
+                👋 Welcome, {userName.split(' ')[0]}
+              </div>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  handleLogout();
+                }}
+                className="block w-full text-left text-red-600 hover:underline"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <a
+                href="/register"
+                className="block text-gray-700 hover:text-blue-600"
+                onClick={() => setIsOpen(false)}
+              >
+                Register
+              </a>
+              <a
+                href="/login"
+                className="block text-gray-700 hover:text-blue-600"
+                onClick={() => setIsOpen(false)}
+              >
+                Login
+              </a>
+            </>
+          )}
         </nav>
       )}
     </header>

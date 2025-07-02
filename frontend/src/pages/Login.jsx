@@ -20,6 +20,8 @@ const handleSubmit = async (e) => {
 
     if (res.ok) {
       alert('✅ Login successful!');
+          // ✅ Save email to localStorage
+      localStorage.setItem('userEmail', email);
       navigate('/');
     } else {
       alert(`❌ ${data.message}`);
