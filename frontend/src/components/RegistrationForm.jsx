@@ -1,244 +1,184 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { useNavigate } from 'react-router-dom';
 
-
 export default function RegistrationForm() {
-  const navigate = useNavigate(); // ✅ Correct
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: ''
-    
-  });
-
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setError,
+    reset,
+    formState: { errors, isSubmitting }
+  } = useForm();
+
+  const password = watch("password");
+
+  const onSubmit = async (data) => {
+    try {
+      const otpRes = await fetch('http://localhost:5001/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          password: data.password,
+        }),
+      });
+
+      const otpData = await otpRes.json();
+
+      if (otpRes.ok) {
+        alert('✅ OTP sent to email! Please verify.');
+        reset(); // Clear form
+        navigate('/verify-otp', {
+          state: { email: data.email },
+        });
+      } else {
+        alert(`❌ OTP Error: ${otpData.message || 'Failed to send OTP'}`);
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      alert('❌ Failed to connect to the server');
     }
   };
-
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
-    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-    if (!formData.password) newErrors.password = 'Password is required';
-    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
-    
-    return newErrors;
-  };
-
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  const newErrors = validateForm();
-
-  if (Object.keys(newErrors).length > 0) {
-    setErrors(newErrors);
-    return;
-  }
-
-  setIsSubmitting(true);
-
-  try {
-    // ✅ Directly send OTP along with user data to the backend
-    const otpRes = await fetch('http://localhost:5001/api/send-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone,
-        password: formData.password,
-      }),
-    });
-
-    const otpData = await otpRes.json();
-
-    if (otpRes.ok) {
-      alert('✅ OTP sent to email! Please verify.');
-
-      // Clear the form
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        password: '',
-        confirmPassword: '',
-      });
-      setErrors({});
-
-      // Navigate to OTP verification screen
-      navigate('/verify-otp', {
-        state: { email: formData.email },
-      });
-    } else {
-      alert(`❌ OTP Error: ${otpData.message || 'Failed to send OTP'}`);
-    }
-  } catch (err) {
-    console.error('Registration error:', err);
-    alert('❌ Failed to connect to the server');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
-          
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-          
         </div>
 
-        {/* Form */}
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
-          <div className="space-y-6">
-            {/* Name Fields */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* First and Last Name */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <input
+                  {...register('firstName', { required: 'First name is required' })}
                   type="text"
-                  name="firstName"
                   placeholder="First name"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 outline-none ${
-                    errors.firstName 
-                      ? 'border-red-300 bg-red-50' 
+                  className={`w-full px-4 py-3 rounded-xl border-2 outline-none ${
+                    errors.firstName
+                      ? 'border-red-300 bg-red-50'
                       : 'border-gray-200 focus:border-blue-500 focus:bg-blue-50'
                   }`}
                 />
-                {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
+                {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>}
               </div>
               <div>
                 <input
+                  {...register('lastName', { required: 'Last name is required' })}
                   type="text"
-                  name="lastName"
                   placeholder="Last name"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 outline-none ${
-                    errors.lastName 
-                      ? 'border-red-300 bg-red-50' 
+                  className={`w-full px-4 py-3 rounded-xl border-2 outline-none ${
+                    errors.lastName
+                      ? 'border-red-300 bg-red-50'
                       : 'border-gray-200 focus:border-blue-500 focus:bg-blue-50'
                   }`}
                 />
-                {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
+                {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>}
               </div>
             </div>
 
             {/* Email */}
             <div>
               <input
+                {...register('email', {
+                  required: 'Email is required',
+                  pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' },
+                })}
                 type="email"
-                name="email"
                 placeholder="Email address"
-                value={formData.email}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 outline-none ${
-                  errors.email 
-                    ? 'border-red-300 bg-red-50' 
+                className={`w-full px-4 py-3 rounded-xl border-2 outline-none ${
+                  errors.email
+                    ? 'border-red-300 bg-red-50'
                     : 'border-gray-200 focus:border-blue-500 focus:bg-blue-50'
                 }`}
               />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
             </div>
 
             {/* Phone */}
             <div>
               <input
+                {...register('phone', { required: 'Phone number is required' })}
                 type="tel"
-                name="phone"
                 placeholder="Phone number"
-                value={formData.phone}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 outline-none ${
-                  errors.phone 
-                    ? 'border-red-300 bg-red-50' 
+                className={`w-full px-4 py-3 rounded-xl border-2 outline-none ${
+                  errors.phone
+                    ? 'border-red-300 bg-red-50'
                     : 'border-gray-200 focus:border-blue-500 focus:bg-blue-50'
                 }`}
               />
-              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
             </div>
 
+            {/* Password */}
             <div className="relative">
-  <input
-    type={showPassword ? 'text' : 'password'}
-    name="password"
-    placeholder="Password"
-    value={formData.password}
-    onChange={handleChange}
-    className={`w-full px-4 py-3 rounded-xl border-2 pr-12 transition-all duration-200 outline-none ${
-      errors.password
-        ? 'border-red-300 bg-red-50'
-        : 'border-gray-200 focus:border-blue-500 focus:bg-blue-50'
-    }`}
-  />
-  <button
-    type="button"
-    className="absolute right-3 top-3 text-gray-500"
-    onClick={() => setShowPassword(prev => !prev)}
-  >
-    {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
-  </button>
-  {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-</div>
+              <input
+                {...register('password', {
+                  required: 'Password is required',
+                  minLength: { value: 6, message: 'Min 6 characters' },
+                })}
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Password"
+                className={`w-full px-4 py-3 pr-12 rounded-xl border-2 outline-none ${
+                  errors.password
+                    ? 'border-red-300 bg-red-50'
+                    : 'border-gray-200 focus:border-blue-500 focus:bg-blue-50'
+                }`}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-3 text-gray-500"
+                onClick={() => setShowPassword(prev => !prev)}
+              >
+                {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+              </button>
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+            </div>
 
+            {/* Confirm Password */}
             <div className="relative">
-  <input
-    type={showConfirmPassword ? 'text' : 'password'}
-    name="confirmPassword"
-    placeholder="Confirm password"
-    value={formData.confirmPassword}
-    onChange={handleChange}
-    className={`w-full px-4 py-3 rounded-xl border-2 pr-12 transition-all duration-200 outline-none ${
-      errors.confirmPassword
-        ? 'border-red-300 bg-red-50'
-        : 'border-gray-200 focus:border-blue-500 focus:bg-blue-50'
-    }`}
-  />
-  <button
-    type="button"
-    className="absolute right-3 top-3 text-gray-500"
-    onClick={() => setShowConfirmPassword(prev => !prev)}
-  >
-    {showConfirmPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
-  </button>
-  {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
-</div>
+              <input
+                {...register('confirmPassword', {
+                  required: 'Please confirm your password',
+                  validate: value =>
+                    value === password || 'Passwords do not match',
+                })}
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="Confirm password"
+                className={`w-full px-4 py-3 pr-12 rounded-xl border-2 outline-none ${
+                  errors.confirmPassword
+                    ? 'border-red-300 bg-red-50'
+                    : 'border-gray-200 focus:border-blue-500 focus:bg-blue-50'
+                }`}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-3 text-gray-500"
+                onClick={() => setShowConfirmPassword(prev => !prev)}
+              >
+                {showConfirmPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+              </button>
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
+              )}
+            </div>
+
             {/* Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting}
-              onClick={handleSubmit}
               className={`w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-200 ${
                 isSubmitting
                   ? 'bg-gray-400 cursor-not-allowed'
@@ -254,14 +194,8 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
                 'Create Account'
               )}
             </button>
-          </div>
-
-          {/* Footer */}
-         
+          </form>
         </div>
-
-        {/* Trust Indicators */}
-        
       </div>
     </div>
   );
